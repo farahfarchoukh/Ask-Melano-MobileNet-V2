@@ -44,8 +44,8 @@ def train(fold):
     for fold_, (_, v_) in enumerate(kf.split(X=df, y=y)):
         df.loc[v_, "kfold"] = fold_
 
-    training_data_path = "/home/sudeep/workspace/melanoma/input/jpeg/train224/"
-    model_path = "/home/sudeep/workspace/melanoma-deep-learning"
+    training_data_path = "/home/askmelano/workspace/melanoma/input/jpeg/train224/"
+    model_path = "/home/askmelano/workspace/melanoma-deep-learning"
     device = "cuda"
     epochs = 50
     train_bs = 32

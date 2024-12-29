@@ -35,7 +35,7 @@ class MobileNetV2Wrapper(nn.Module):
         return out, loss
 
 def train(fold):
-    input_path = "/home/sudeep/workspace/melanoma/input/"
+    input_path = "/home/askmelano/workspace/melanoma/input/"
     df = pd.read_csv(os.path.join(input_path, "train.csv"))
     df["kfold"] = -1
     df = df.sample(frac=1).reset_index(drop=True)

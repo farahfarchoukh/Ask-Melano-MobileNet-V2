@@ -35,7 +35,7 @@ class MobileNetV2Wrapper(nn.Module):
         return out, loss
 
 def train(fold):
-    input_path = "/home/askmelano/workspace/melanoma/input/" #update the path according to the app
+    input_path = "/home/askmelano/workspace/melanoma/input/"  # Update the path according to the app
     df = pd.read_csv(os.path.join(input_path, "train.csv"))
     df["kfold"] = -1
     df = df.sample(frac=1).reset_index(drop=True)
@@ -44,8 +44,8 @@ def train(fold):
     for fold_, (_, v_) in enumerate(kf.split(X=df, y=y)):
         df.loc[v_, "kfold"] = fold_
 
-    training_data_path = "/home/askmelano/workspace/melanoma/input/jpeg/train224/" #update the path according to the app
-    model_path = "/home/askmelano/workspace/melanoma-deep-learning" #update the path according to the app
+    training_data_path = "/home/askmelano/workspace/melanoma/input/jpeg/train224/"  # Update the path according to the app
+    model_path = "/home/askmelano/workspace/melanoma-deep-learning"  # Update the path according to the app
     device = "cuda"
     epochs = 50
     train_bs = 32

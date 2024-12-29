@@ -1,2 +1,2 @@
-# Melanoma-MobileNet-V2
-Melanoma MobileNet V2
+# AskMelano-MobileNet-V2
+Ask Melano MobileNet V2

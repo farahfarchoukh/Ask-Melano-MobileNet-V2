@@ -1,81 +1,27 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import division, print_function
 import os
-import numpy as np
-import tensorflow as tf
-from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing import image
-from tensorflow.keras.applications.mobilenet import MobileNet, preprocess_input, decode_predictions
 from flask import Flask, request, render_template
 from werkzeug.utils import secure_filename
-from tensorflow.compat.v1 import ConfigProto, InteractiveSession
+import torch
+import numpy as np
+from torchvision import transforms
+from PIL import Image
 
-# TensorFlow GPU memory configuration
-config = ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.2
-config.gpu_options.allow_growth = True
-session = InteractiveSession(config=config)
-
-# Define a Flask app
+# Define the Flask app
 app = Flask(__name__)
 
-# Model saved with Keras model.save()
-MODEL_PATH_MOBILENET = 'path/to/your/model_MobileNet_Melanoma.h5'
+# Load the trained model
+MODEL_PATH = 'path/to/your/model.pth'  # Update this path
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Load your trained MobileNet model
-model_mobilenet = load_model(MODEL_PATH_MOBILENET)
+class MobileNetV2Wrapper(nn.Module):
+    def __init__(self, pretrained=False):
+        super(MobileNetV2Wrapper, self).__init__()
+        self.model = models.mobilenet_v2(pretrained=pretrained)
+        in_features = self.model.classifier[1].in_features
+        self.model.classifier[1] = nn.Linear(in_features, 1)  # For binary classification
 
-# Folder for uploads
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-def model_predict_mobilenet(img_path, model):
-    img = image.load_img(img_path, target_size=(224, 224))
-    x = image.img_to_array(img)
-    x = preprocess_input(x)
-    x = np.expand_dims(x, axis=0)
-
-    preds = model.predict(x)
-    preds = np.argmax(preds, axis=1)
-
-    class_labels_mobilenet = [ 
-        "actinic keratosis",
-        "basal cell carcinoma",
-        "dermatofibroma",
-        "melanoma",
-        "nevus",
-        "pigmented benign keratosis",
-        "seborrheic keratosis",
-        "squamous cell carcinoma",
-        "vascular lesion"
-    
-        # Add your class labels here
-    ]
-
-    result = class_labels_mobilenet[preds[0]]
-    return result
-
-@app.route('/', methods=['GET'])
-def home():
-    # Main page
-    return render_template('index.html')
-
-@app.route('/predict_mobilenet', methods=['POST'])
-def upload_mobilenet():
-    if 'file' not in request.files:
-        return render_template('index.html', prediction="No file part")
-
-    file = request.files['file']
-
-    if file.filename == '':
-        return render_template('index.html', prediction="No selected file")
-
-    if file:
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
-        file.save(file_path)
-        preds_mobilenet = model_predict_mobilenet(file_path, model_mobilenet)
-        return render_template('index.html', prediction=preds_mobilenet)
-
-if __name__ == '__main__':
-    app.run(port=5001, debug=True)
+    def forward(self, image):
+        x = self.model.features(image)
+        x = nn.functional.adaptive_avg_pool2d(x, 1)
+        x = x.reshape(x.size(0), -1)
+       

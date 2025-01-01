@@ -1,10 +1,15 @@
 import os
+import logging
 from flask import Flask, request, render_template
 from werkzeug.utils import secure_filename
 import torch
+import torch.nn as nn
 import numpy as np
-from torchvision import transforms
+from torchvision import transforms, models
 from PIL import Image
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
 
 # Define the Flask app
 app = Flask(__name__)
@@ -29,8 +34,18 @@ class MobileNetV2Wrapper(nn.Module):
 
 # Initialize the model and load weights
 model = MobileNetV2Wrapper(pretrained=False)
-model.load_state_dict(torch.load(MODEL_PATH))
+try:
+    model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
+    logging.info("Model loaded successfully.")
+except Exception as e:
+    logging.error(f"Error loading model: {e}")
+    exit(1)
+
+model.to(device)
 model.eval()  # Set the model to evaluation mode
+
+# Allowed file extensions
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 # Folder for uploads
 UPLOAD_FOLDER = 'uploads'
@@ -38,6 +53,9 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def model_predict(img_path):
     img = Image.open(img_path).convert('RGB')
@@ -66,11 +84,16 @@ def upload():
     if file.filename == '':
         return render_template('index.html', prediction="No selected file")
 
+    if not allowed_file(file.filename):
+        return render_template('index.html', prediction="Unsupported file type")
+
     if file:
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
         file.save(file_path)
         prediction = model_predict(file_path)
-        return render_template('index.html', prediction=prediction)
+        formatted_prediction = f"Probability of class 1: {prediction:.2f}"
+        logging.info(f"Prediction made: {formatted_prediction}")
+        return render_template('index.html', prediction=formatted_prediction)
 
 if __name__ == '__main__':
     app.run(port=5001, debug=True)

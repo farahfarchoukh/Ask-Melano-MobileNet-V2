@@ -8,9 +8,34 @@ import torch.nn as nn
 from sklearn import model_selection
 from sklearn import metrics
 from torch.utils.data import DataLoader
+import cv2
 
-# Define your ClassificationLoader here or import it if it's defined elsewhere
-# from your_module import ClassificationLoader
+class ClassificationLoader(torch.utils.data.Dataset):
+    def __init__(self, image_paths, targets, resize=None, augmentations=None):
+        self.image_paths = image_paths
+        self.targets = targets
+        self.resize = resize
+        self.augmentations = augmentations
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, idx):
+        image = cv2.imread(self.image_paths[idx])
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # Convert to RGB
+        target = self.targets[idx]
+        
+        if self.resize:
+            image = cv2.resize(image, self.resize)
+
+        if self.augmentations:
+            augmented = self.augmentations(image=image)
+            image = augmented["image"]
+
+        # Convert to (Channels, Height, Width) format and normalize
+        image = np.transpose(image, (2, 0, 1)).astype(np.float32)
+        return torch.tensor(image, dtype=torch.float), torch.tensor(target, dtype=torch.float)
+
 
 class MobileNetV2Wrapper(nn.Module):
     def __init__(self, pretrained=True):

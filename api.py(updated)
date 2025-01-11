@@ -98,17 +98,13 @@ def upload():
 
         # Implement thresholding logic
         if prediction < 0.4:  # Adjust this threshold as needed
-            result = f"Input may not be a skin lesion. Probability: {probability_benign:.2f}% (Benign), {probability_malignant:.2f}% (Malignant)."
+            result = "Input may not be a skin lesion. Please retake the photo and ensure it is a clear image of the skin."
         elif prediction < 0.8:
-            result = f"Benign. Probability: {probability_benign:.2f}% (Benign), {probability_malignant:.2f}% (Malignant)."
+            result = f"Benign. Probability: {probability_benign:.2f}% (Benign), {probability_malignant:.2f}% (Malignant). Please consult a doctor for further evaluation."
         else:
-            result = f"Malignant. Probability: {probability_malignant:.2f}% (Malignant), {probability_benign:.2f}% (Benign)."
-
-        # Final output message
-        result += " Please consult a doctor for further evaluation."
+            result = f"Malignant. Probability: {probability_malignant:.2f}% (Malignant), {probability_benign:.2f}% (Benign). Please consult a doctor for further evaluation."
 
         logging.info(f"Prediction made: {result}")
         return render_template('index.html', prediction=result)
 
-if __name__ == '__main__':
-    app.run(port=5001, debug=True)
+if __name__ == '__
